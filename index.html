@@ -324,12 +324,12 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <h1>Heartbeat Resonance</h1>
-            <p class="subtitle">Art génératif réactif au MIDI - Chaque cœur chante sa propre chanson</p>
+            <p class="subtitle">MIDI-reactive generative art - Each heart sings its own song</p>
 
             <!-- MIDI Status -->
             <div id="midi-status" class="midi-status disconnected">
                 <span class="midi-indicator"></span>
-                <span id="midi-text">Connexion MIDI...</span>
+                <span id="midi-text">Connecting to MIDI...</span>
             </div>
 
             <!-- Seed Section -->
@@ -415,32 +415,37 @@
 
             <!-- Audio Section -->
             <div class="control-section">
-                <h3>Audio Génératif</h3>
+                <h3>Audio</h3>
+
+                <!-- Audio Start Button -->
+                <button class="button" onclick="initAudioContext()" id="start-audio-btn" style="margin-bottom: 16px;">
+                    🔊 Click to activate audio
+                </button>
 
                 <!-- Audio Enable -->
                 <div class="control-group">
                     <label>
                         <input type="checkbox" id="audioEnabled" checked onchange="toggleAudio(this.checked)">
-                        Activer l'audio
+                        Sound enabled
                     </label>
                 </div>
 
                 <!-- Chord Progression -->
                 <div class="control-group">
-                    <label>Émotion / Accord</label>
+                    <label>Scale / Emotion</label>
                     <select id="chordProgression" onchange="updateChordProgression(this.value)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--anthropic-light-gray); font-family: 'Poppins', sans-serif; font-size: 14px;">
-                        <option value="joyful">✨ Joyeux (C Major)</option>
-                        <option value="melancholic">🌧️ Mélancolique (A Minor)</option>
-                        <option value="dreamy">☁️ Rêveur (D Major)</option>
-                        <option value="passionate">❤️ Passionné (E Minor)</option>
-                        <option value="peaceful">☮️ Paisible (F Major)</option>
-                        <option value="mystical">🔮 Mystique (B Minor)</option>
+                        <option value="joyful">✨ Joyful (C Major)</option>
+                        <option value="melancholic">🌧️ Melancholic (A Minor)</option>
+                        <option value="dreamy">☁️ Dreamy (D Major)</option>
+                        <option value="passionate">❤️ Passionate (E Minor)</option>
+                        <option value="peaceful">☮️ Peaceful (F Major)</option>
+                        <option value="mystical">🔮 Mystical (B Minor)</option>
                     </select>
                 </div>
 
                 <!-- Master Volume -->
                 <div class="control-group">
-                    <label>Volume Principal</label>
+                    <label>Volume</label>
                     <div class="slider-container">
                         <input type="range" id="masterVolume" min="-40" max="0" step="2" value="-12" oninput="updateVolume(this.value)">
                         <span class="value-display" id="masterVolume-value">-12 dB</span>
@@ -500,7 +505,7 @@
         // Définition des accords émotionnels (tonalités en notation anglaise)
         const chordProgressions = {
             joyful: {
-                name: '✨ Joyeux (C Major)',
+                name: '✨ Joyful (C Major)',
                 root: 'C4',
                 scale: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
                 chords: [
@@ -512,7 +517,7 @@
                 color: [45, 90, 95]
             },
             melancholic: {
-                name: '🌧️ Mélancolique (A Minor)',
+                name: '🌧️ Melancholic (A Minor)',
                 root: 'A3',
                 scale: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
                 chords: [
@@ -524,7 +529,7 @@
                 color: [220, 70, 80]
             },
             dreamy: {
-                name: '☁️ Rêveur (D Major)',
+                name: '☁️ Dreamy (D Major)',
                 root: 'D4',
                 scale: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
                 chords: [
@@ -536,7 +541,7 @@
                 color: [200, 75, 90]
             },
             passionate: {
-                name: '❤️ Passionné (E Minor)',
+                name: '❤️ Passionate (E Minor)',
                 root: 'E3',
                 scale: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'],
                 chords: [
@@ -548,7 +553,7 @@
                 color: [0, 85, 90]
             },
             peaceful: {
-                name: '☮️ Paisible (F Major)',
+                name: '☮️ Peaceful (F Major)',
                 root: 'F3',
                 scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
                 chords: [
@@ -560,7 +565,7 @@
                 color: [150, 60, 85]
             },
             mystical: {
-                name: '🔮 Mystique (B Minor)',
+                name: '🔮 Mystical (B Minor)',
                 root: 'B3',
                 scale: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'],
                 chords: [
@@ -583,6 +588,14 @@
             Tone.start().then(() => {
                 setupAudioSystem();
                 audioInitialized = true;
+                
+                // Update button
+                const btn = document.getElementById('start-audio-btn');
+                btn.textContent = '✅ Audio activated';
+                btn.style.background = '#4caf50';
+                btn.disabled = true;
+                btn.style.cursor = 'default';
+                
                 console.log('Audio system initialized');
             });
         }
@@ -758,21 +771,21 @@
             }
             
             if (foundDevice) {
-                updateMIDIStatus(true, "MIDI connecté - Touchez votre TOUCH ME!");
+                updateMIDIStatus(true, "MIDI connected - Touch your TOUCH ME!");
             } else {
-                updateMIDIStatus(false, "Aucun périphérique MIDI détecté");
+                updateMIDIStatus(false, "No MIDI device detected");
             }
             
             midiAccess.onstatechange = function(e) {
                 if (e.port.type === "input") {
                     e.port.onmidimessage = handleMIDIMessage;
-                    updateMIDIStatus(true, "MIDI connecté - Touchez votre TOUCH ME!");
+                    updateMIDIStatus(true, "MIDI connected - Touch your TOUCH ME!");
                 }
             };
         }
 
         function onMIDIFailure() {
-            updateMIDIStatus(false, "Erreur d'accès MIDI");
+            updateMIDIStatus(false, "MIDI access error");
         }
 
         function updateMIDIStatus(connected, message) {
@@ -820,9 +833,6 @@
             
             // Setup MIDI
             setupMIDI();
-            
-            // Démarrer l'audio automatiquement
-            initAudioContext();
             
             // Remove loading message
             document.querySelector('.loading').style.display = 'none';
@@ -898,15 +908,33 @@
             textAlign(CENTER, CENTER);
             fill(176, 174, 165, 150);
             noStroke();
+            
+            if (!audioInitialized) {
+                // Message if audio not started yet
+                textSize(26);
+                textFont('Lora');
+                fill(217, 119, 87, 200);
+                text('🔊 Activate audio in the left panel', width/2, height/2 - 60);
+                textSize(16);
+                textFont('Poppins');
+                fill(176, 174, 165, 150);
+                text('(click the orange button)', width/2, height/2 - 20);
+            }
+            
             textSize(24);
             textFont('Lora');
-            text('Touchez votre Playtronica TOUCH ME', width/2, height/2 - 40);
+            fill(176, 174, 165, 150);
+            text('Touch your Playtronica TOUCH ME', width/2, height/2 + 20);
             textSize(16);
             textFont('Poppins');
-            text('pour créer des cœurs vivants', width/2, height/2);
-            textSize(14);
-            fill(176, 174, 165, 100);
-            text('Audio actif - Écoutez chaque cœur chanter', width/2, height/2 + 40);
+            text('to create living hearts', width/2, height/2 + 60);
+            
+            if (audioInitialized) {
+                textSize(14);
+                fill(76, 175, 80, 150);
+                text('✅ Audio active - Listen to each heart sing', width/2, height/2 + 100);
+            }
+            
             pop();
         }
 
