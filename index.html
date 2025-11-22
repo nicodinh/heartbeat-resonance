@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heartbeat Resonance - MIDI Reactive Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Anthropic Brand Colors */
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .sidebar .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        /* Control Sections */
+        .control-section {
+            margin-bottom: 32px;
+        }
+
+        .control-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '•';
+            color: var(--anthropic-orange);
+            font-weight: bold;
+        }
+
+        /* Seed Controls */
+        .seed-input {
+            width: 100%;
+            background: var(--anthropic-light);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--anthropic-light-gray);
+            text-align: center;
+        }
+
+        .seed-input:focus {
+            outline: none;
+            border-color: var(--anthropic-orange);
+            box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.1);
+            background: white;
+        }
+
+        .seed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .regen-button {
+            margin-bottom: 0;
+        }
+
+        /* Parameter Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #c86641;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Checkboxes */
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: var(--anthropic-orange);
+        }
+
+        /* Select dropdown */
+        select {
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--anthropic-orange) !important;
+            box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.1);
+        }
+
+        select:hover {
+            border-color: var(--anthropic-mid-gray);
+        }
+
+        /* Buttons */
+        .button {
+            width: 100%;
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .button:hover {
+            background: #c86641;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: var(--anthropic-light-gray);
+            color: var(--anthropic-dark);
+        }
+
+        .button.secondary:hover {
+            background: var(--anthropic-mid-gray);
+            color: white;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row .button {
+            flex: 1;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #canvas-container {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+            overflow: hidden;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+        }
+
+        /* MIDI Status */
+        .midi-status {
+            background: var(--anthropic-light);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            border: 1px solid var(--anthropic-light-gray);
+        }
+
+        .midi-status.connected {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .midi-status.disconnected {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #e65100;
+        }
+
+        .midi-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #ff9800;
+        }
+
+        .midi-status.connected .midi-indicator {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>Heartbeat Resonance</h1>
+            <p class="subtitle">Art génératif réactif au MIDI - Chaque cœur chante sa propre chanson</p>
+
+            <!-- MIDI Status -->
+            <div id="midi-status" class="midi-status disconnected">
+                <span class="midi-indicator"></span>
+                <span id="midi-text">Connexion MIDI...</span>
+            </div>
+
+            <!-- Seed Section -->
+            <div class="control-section">
+                <h3>Seed</h3>
+                <input type="text" id="seed-input" class="seed-input" value="12345" onchange="updateSeed()">
+                <div class="seed-controls">
+                    <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                    <button class="button secondary" onclick="nextSeed()">Next →</button>
+                </div>
+                <div class="seed-controls">
+                    <button class="button secondary" onclick="randomSeedAndUpdate()">Random</button>
+                </div>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="control-section">
+                <h3>Parameters</h3>
+
+                <!-- Heart Size -->
+                <div class="control-group">
+                    <label>Heart Size</label>
+                    <div class="slider-container">
+                        <input type="range" id="heartSize" min="0.5" max="3.0" step="0.1" value="1.5" oninput="updateParam('heartSize', this.value)">
+                        <span class="value-display" id="heartSize-value">1.5</span>
+                    </div>
+                </div>
+
+                <!-- Pulse Speed -->
+                <div class="control-group">
+                    <label>Pulse Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="pulseSpeed" min="0.5" max="3.0" step="0.1" value="1.0" oninput="updateParam('pulseSpeed', this.value)">
+                        <span class="value-display" id="pulseSpeed-value">1.0</span>
+                    </div>
+                </div>
+
+                <!-- Particle Density -->
+                <div class="control-group">
+                    <label>Particle Density</label>
+                    <div class="slider-container">
+                        <input type="range" id="particleDensity" min="50" max="300" step="10" value="150" oninput="updateParam('particleDensity', this.value)">
+                        <span class="value-display" id="particleDensity-value">150</span>
+                    </div>
+                </div>
+
+                <!-- Heart Lifetime -->
+                <div class="control-group">
+                    <label>Heart Lifetime</label>
+                    <div class="slider-container">
+                        <input type="range" id="lifetime" min="2" max="15" step="0.5" value="8" oninput="updateParam('lifetime', this.value)">
+                        <span class="value-display" id="lifetime-value">8</span>
+                    </div>
+                </div>
+
+                <!-- Movement Speed -->
+                <div class="control-group">
+                    <label>Movement Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="movementSpeed" min="0" max="2" step="0.1" value="0.5" oninput="updateParam('movementSpeed', this.value)">
+                        <span class="value-display" id="movementSpeed-value">0.5</span>
+                    </div>
+                </div>
+
+                <!-- Glow Intensity -->
+                <div class="control-group">
+                    <label>Glow Intensity</label>
+                    <div class="slider-container">
+                        <input type="range" id="glowIntensity" min="0" max="20" step="1" value="10" oninput="updateParam('glowIntensity', this.value)">
+                        <span class="value-display" id="glowIntensity-value">10</span>
+                    </div>
+                </div>
+
+                <!-- Max Hearts -->
+                <div class="control-group">
+                    <label>Max Hearts (Performance)</label>
+                    <div class="slider-container">
+                        <input type="range" id="maxHearts" min="10" max="50" step="5" value="30" oninput="updateParam('maxHearts', this.value)">
+                        <span class="value-display" id="maxHearts-value">30</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Section -->
+            <div class="control-section">
+                <h3>Audio Génératif</h3>
+
+                <!-- Audio Enable -->
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="audioEnabled" checked onchange="toggleAudio(this.checked)">
+                        Activer l'audio
+                    </label>
+                </div>
+
+                <!-- Chord Progression -->
+                <div class="control-group">
+                    <label>Émotion / Accord</label>
+                    <select id="chordProgression" onchange="updateChordProgression(this.value)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--anthropic-light-gray); font-family: 'Poppins', sans-serif; font-size: 14px;">
+                        <option value="joyful">✨ Joyeux (C Major)</option>
+                        <option value="melancholic">🌧️ Mélancolique (A Minor)</option>
+                        <option value="dreamy">☁️ Rêveur (D Major)</option>
+                        <option value="passionate">❤️ Passionné (E Minor)</option>
+                        <option value="peaceful">☮️ Paisible (F Major)</option>
+                        <option value="mystical">🔮 Mystique (B Minor)</option>
+                    </select>
+                </div>
+
+                <!-- Master Volume -->
+                <div class="control-group">
+                    <label>Volume Principal</label>
+                    <div class="slider-container">
+                        <input type="range" id="masterVolume" min="-40" max="0" step="2" value="-12" oninput="updateVolume(this.value)">
+                        <span class="value-display" id="masterVolume-value">-12 dB</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="control-section">
+                <h3>Actions</h3>
+                <div class="button-row">
+                    <button class="button" onclick="resetParameters()">Reset</button>
+                    <button class="button secondary" onclick="clearHearts()">Clear All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="canvas-area">
+            <div id="canvas-container">
+                <div class="loading">Initializing generative art...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // PARAMETERS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let params = {
+            seed: 12345,
+            heartSize: 1.5,
+            pulseSpeed: 1.0,
+            particleDensity: 150,
+            lifetime: 8,
+            movementSpeed: 0.5,
+            glowIntensity: 10,
+            maxHearts: 30, // Limite pour les performances
+            // Paramètres audio
+            audioEnabled: true,
+            masterVolume: -12,
+            chordProgression: 'joyful' // joyful, melancholic, dreamy, passionate, peaceful, mystical
+        };
+
+        let defaultParams = {...params};
+        
+        // Graphics buffer pour optimisation
+        let heartShapes = [];
+        let shapesInitialized = false;
+        
+        // Audio system
+        let audioInitialized = false;
+        let reverb = null;
+        let delay = null;
+        
+        // Définition des accords émotionnels (tonalités en notation anglaise)
+        const chordProgressions = {
+            joyful: {
+                name: '✨ Joyeux (C Major)',
+                root: 'C4',
+                scale: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+                chords: [
+                    ['C4', 'E4', 'G4', 'C5'],      // I - C major
+                    ['G3', 'B3', 'D4', 'G4'],      // V - G major
+                    ['A3', 'C4', 'E4', 'A4'],      // vi - A minor
+                    ['F3', 'A3', 'C4', 'F4']       // IV - F major
+                ],
+                color: [45, 90, 95]
+            },
+            melancholic: {
+                name: '🌧️ Mélancolique (A Minor)',
+                root: 'A3',
+                scale: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+                chords: [
+                    ['A3', 'C4', 'E4', 'A4'],      // i - A minor
+                    ['F3', 'A3', 'C4', 'F4'],      // VI - F major
+                    ['C4', 'E4', 'G4', 'C5'],      // III - C major
+                    ['G3', 'B3', 'D4', 'G4']       // VII - G major
+                ],
+                color: [220, 70, 80]
+            },
+            dreamy: {
+                name: '☁️ Rêveur (D Major)',
+                root: 'D4',
+                scale: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+                chords: [
+                    ['D4', 'F#4', 'A4', 'D5'],     // I - D major
+                    ['B3', 'D4', 'F#4', 'B4'],     // vi - B minor
+                    ['G3', 'B3', 'D4', 'G4'],      // IV - G major
+                    ['A3', 'C#4', 'E4', 'A4']      // V - A major
+                ],
+                color: [200, 75, 90]
+            },
+            passionate: {
+                name: '❤️ Passionné (E Minor)',
+                root: 'E3',
+                scale: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'],
+                chords: [
+                    ['E3', 'G3', 'B3', 'E4'],      // i - E minor
+                    ['C4', 'E4', 'G4', 'C5'],      // VI - C major
+                    ['D3', 'F#3', 'A3', 'D4'],     // VII - D major
+                    ['B3', 'D4', 'F#4', 'B4']      // V - B major
+                ],
+                color: [0, 85, 90]
+            },
+            peaceful: {
+                name: '☮️ Paisible (F Major)',
+                root: 'F3',
+                scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+                chords: [
+                    ['F3', 'A3', 'C4', 'F4'],      // I - F major
+                    ['C4', 'E4', 'G4', 'C5'],      // V - C major
+                    ['D3', 'F3', 'A3', 'D4'],      // vi - D minor
+                    ['Bb3', 'D4', 'F4', 'Bb4']     // IV - Bb major
+                ],
+                color: [150, 60, 85]
+            },
+            mystical: {
+                name: '🔮 Mystique (B Minor)',
+                root: 'B3',
+                scale: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'],
+                chords: [
+                    ['B3', 'D4', 'F#4', 'B4'],     // i - B minor
+                    ['G3', 'B3', 'D4', 'G4'],      // VI - G major
+                    ['F#3', 'A3', 'C#4', 'F#4'],   // V - F# major
+                    ['E3', 'G3', 'B3', 'E4']       // iv - E minor
+                ],
+                color: [280, 75, 85]
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // AUDIO SYSTEM WITH TONE.JS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function initAudioContext() {
+            if (audioInitialized) return;
+            
+            Tone.start().then(() => {
+                setupAudioSystem();
+                audioInitialized = true;
+                console.log('Audio system initialized');
+            });
+        }
+
+        function setupAudioSystem() {
+            // Effects chain simplifié - seulement les effets pour les cœurs
+            reverb = new Tone.Reverb({
+                decay: 5,
+                wet: 0.4
+            }).toDestination();
+
+            delay = new Tone.FeedbackDelay({
+                delayTime: "8n",
+                feedback: 0.25,
+                wet: 0.15
+            }).connect(reverb);
+        }
+
+        // Créer un instrument unique pour chaque cœur
+        function createHeartInstrument(velocity, noteIndex) {
+            if (!audioInitialized || !params.audioEnabled) return null;
+
+            const progression = chordProgressions[params.chordProgression];
+            const scale = progression.scale;
+            
+            // Utiliser directement la note MIDI pour plus de variation
+            // Convertir la note MIDI (0-127) en index de gamme et octave
+            const scaleIndex = noteIndex % scale.length;
+            const octaveBase = Math.floor(noteIndex / 12); // Octave basée sur la note MIDI
+            const octave = constrain(octaveBase, 3, 6); // Limiter entre octaves 3 et 6
+            
+            const baseNote = scale[scaleIndex] + octave;
+            
+            // Varier le timbre basé sur une combinaison de note et vélocité
+            const synthTypes = [
+                { type: "sine", detune: 0, filterFreq: 2000 },
+                { type: "triangle", detune: 7, filterFreq: 3000 },
+                { type: "square", detune: -7, filterFreq: 1500 },
+                { type: "sawtooth", detune: 3, filterFreq: 2500 }
+            ];
+            
+            // Choix du timbre basé sur la combinaison note+vélocité pour plus de variation
+            const synthIndex = (noteIndex + Math.floor(velocity / 8)) % synthTypes.length;
+            const synthConfig = synthTypes[synthIndex];
+            
+            // Volume basé sur la vélocité avec plus de variation
+            const volume = map(velocity, 0, 127, -32, -18);
+            
+            // Créer un synthétiseur unique avec filtre
+            const synth = new Tone.Synth({
+                oscillator: { 
+                    type: synthConfig.type,
+                    detune: synthConfig.detune
+                },
+                envelope: {
+                    attack: map(velocity, 0, 127, 1.0, 0.2),
+                    decay: 0.4,
+                    sustain: 0.85,
+                    release: 2.0
+                },
+                filter: {
+                    type: "lowpass",
+                    frequency: synthConfig.filterFreq,
+                    Q: 1
+                },
+                filterEnvelope: {
+                    attack: 0.5,
+                    decay: 0.3,
+                    sustain: 0.7,
+                    release: 2,
+                    baseFrequency: synthConfig.filterFreq,
+                    octaves: 2
+                },
+                volume: volume
+            }).connect(delay);
+
+            // Créer un LFO pour moduler la fréquence avec paramètres variés
+            const lfoFreq = map(velocity, 0, 127, 0.3, 1.8);
+            const lfoDepth = map(noteIndex % 64, 0, 63, 8, 20);
+            
+            const lfo = new Tone.LFO({
+                frequency: lfoFreq,
+                min: -lfoDepth,
+                max: lfoDepth
+            }).connect(synth.detune);
+            
+            lfo.start();
+
+            // Déclencher la note avec sustain infini
+            synth.triggerAttack(baseNote);
+            
+            // Ajouter une légère variation de vibrato
+            const vibrato = new Tone.Vibrato({
+                frequency: map(velocity, 0, 127, 3, 7),
+                depth: map(noteIndex % 32, 0, 31, 0.05, 0.15)
+            }).connect(delay);
+            
+            synth.disconnect();
+            synth.connect(vibrato);
+            
+            return {
+                synth: synth,
+                lfo: lfo,
+                vibrato: vibrato,
+                baseNote: baseNote,
+                scaleIndex: scaleIndex,
+                octave: octave
+            };
+        }
+
+        function updateVolume(value) {
+            params.masterVolume = parseFloat(value);
+            document.getElementById('masterVolume-value').textContent = value + ' dB';
+            
+            if (audioInitialized) {
+                Tone.Destination.volume.value = params.masterVolume;
+            }
+        }
+
+        function toggleAudio(enabled) {
+            params.audioEnabled = enabled;
+            if (!enabled && audioInitialized) {
+                // Arrêter tous les cœurs
+                hearts.forEach(h => {
+                    if (h.instrument) {
+                        h.releaseSound();
+                    }
+                });
+            }
+        }
+
+        function updateChordProgression(value) {
+            params.chordProgression = value;
+            
+            // Mettre à jour toutes les notes des cœurs existants pour la nouvelle gamme
+            const progression = chordProgressions[value];
+            hearts.forEach(h => {
+                if (h.instrument) {
+                    const newNote = progression.scale[h.instrument.scaleIndex % progression.scale.length] + h.instrument.octave;
+                    h.instrument.synth.frequency.rampTo(
+                        Tone.Frequency(newNote).toFrequency(), 
+                        0.5
+                    );
+                    h.instrument.baseNote = newNote;
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // MIDI SETUP
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let midiAccess = null;
+        let midiConnected = false;
+
+        function setupMIDI() {
+            if (navigator.requestMIDIAccess) {
+                navigator.requestMIDIAccess()
+                    .then(onMIDISuccess, onMIDIFailure);
+            } else {
+                updateMIDIStatus(false, "Web MIDI non supporté");
+            }
+        }
+
+        function onMIDISuccess(midi) {
+            midiAccess = midi;
+            const inputs = midiAccess.inputs.values();
+            
+            let foundDevice = false;
+            for (let input of inputs) {
+                input.onmidimessage = handleMIDIMessage;
+                foundDevice = true;
+            }
+            
+            if (foundDevice) {
+                updateMIDIStatus(true, "MIDI connecté - Touchez votre TOUCH ME!");
+            } else {
+                updateMIDIStatus(false, "Aucun périphérique MIDI détecté");
+            }
+            
+            midiAccess.onstatechange = function(e) {
+                if (e.port.type === "input") {
+                    e.port.onmidimessage = handleMIDIMessage;
+                    updateMIDIStatus(true, "MIDI connecté - Touchez votre TOUCH ME!");
+                }
+            };
+        }
+
+        function onMIDIFailure() {
+            updateMIDIStatus(false, "Erreur d'accès MIDI");
+        }
+
+        function updateMIDIStatus(connected, message) {
+            midiConnected = connected;
+            const statusDiv = document.getElementById('midi-status');
+            const textSpan = document.getElementById('midi-text');
+            
+            if (connected) {
+                statusDiv.className = 'midi-status connected';
+            } else {
+                statusDiv.className = 'midi-status disconnected';
+            }
+            textSpan.textContent = message;
+        }
+
+        function handleMIDIMessage(message) {
+            const command = message.data[0];
+            const note = message.data[1];
+            const velocity = message.data.length > 2 ? message.data[2] : 0;
+
+            // Note On (144-159) avec vélocité > 0
+            if (command >= 144 && command <= 159 && velocity > 0) {
+                createHeartFromMIDI(note, velocity);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // P5.JS SETUP
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let hearts = [];
+        let time = 0;
+        let bgGraphics; // Buffer pour le background
+
+        function setup() {
+            let canvas = createCanvas(1200, 1200);
+            canvas.parent('canvas-container');
+            
+            // Initialize random seed
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+            
+            // Créer le background une seule fois
+            createBackgroundGraphics();
+            
+            // Setup MIDI
+            setupMIDI();
+            
+            // Démarrer l'audio automatiquement
+            initAudioContext();
+            
+            // Remove loading message
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        function createBackgroundGraphics() {
+            bgGraphics = createGraphics(width, height);
+            bgGraphics.loadPixels();
+            for (let y = 0; y < height; y++) {
+                let inter = map(y, 0, height, 0, 1);
+                let c = lerpColor(color(250, 249, 245), color(255, 250, 240), inter);
+                bgGraphics.stroke(c);
+                bgGraphics.line(0, y, width, y);
+            }
+            bgGraphics.updatePixels();
+        }
+
+        function draw() {
+            // Utiliser le background précalculé
+            image(bgGraphics, 0, 0);
+            
+            // Fade trail léger pour effet de traînée
+            fill(250, 249, 245, 30);
+            noStroke();
+            rect(0, 0, width, height);
+            
+            time += 0.016 * params.pulseSpeed;
+            
+            // Update and draw all hearts
+            for (let i = hearts.length - 1; i >= 0; i--) {
+                hearts[i].update();
+                hearts[i].display();
+                
+                // Remove dead hearts and release their sound
+                if (hearts[i].isDead()) {
+                    hearts[i].releaseSound();
+                    hearts.splice(i, 1);
+                }
+            }
+            
+            // Draw info text if no hearts
+            if (hearts.length === 0) {
+                drawInfoText();
+            }
+            
+            // Afficher le FPS en debug (optionnel)
+            // displayFPS();
+        }
+
+        function displayFPS() {
+            push();
+            fill(176, 174, 165);
+            noStroke();
+            textSize(12);
+            textAlign(LEFT, TOP);
+            text('FPS: ' + floor(frameRate()), 10, 10);
+            text('Hearts: ' + hearts.length, 10, 25);
+            pop();
+        }
+
+        function drawBackgroundOld() {
+            // Ancienne version - gardée pour référence
+            for (let y = 0; y < height; y++) {
+                let inter = map(y, 0, height, 0, 1);
+                let c = lerpColor(color(250, 249, 245), color(255, 250, 240), inter);
+                stroke(c);
+                line(0, y, width, y);
+            }
+        }
+
+        function drawInfoText() {
+            push();
+            textAlign(CENTER, CENTER);
+            fill(176, 174, 165, 150);
+            noStroke();
+            textSize(24);
+            textFont('Lora');
+            text('Touchez votre Playtronica TOUCH ME', width/2, height/2 - 40);
+            textSize(16);
+            textFont('Poppins');
+            text('pour créer des cœurs vivants', width/2, height/2);
+            textSize(14);
+            fill(176, 174, 165, 100);
+            text('Audio actif - Écoutez chaque cœur chanter', width/2, height/2 + 40);
+            pop();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // HEART CREATION
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function createHeartFromMIDI(note, velocity) {
+            // Limiter le nombre de cœurs pour les performances
+            if (hearts.length >= params.maxHearts) {
+                const oldestHeart = hearts.shift();
+                if (oldestHeart.instrument) {
+                    oldestHeart.releaseSound();
+                }
+            }
+            
+            // Palette de couleurs variée et vibrante
+            const colorSchemes = [
+                // Rouge passionné
+                { hueBase: 0, hueRange: 15, sat: [70, 95], bright: [80, 100] },
+                // Rose tendre
+                { hueBase: 340, hueRange: 20, sat: [60, 85], bright: [85, 100] },
+                // Orange chaleureux
+                { hueBase: 20, hueRange: 20, sat: [75, 95], bright: [80, 95] },
+                // Magenta vibrant
+                { hueBase: 310, hueRange: 30, sat: [70, 90], bright: [75, 95] },
+                // Corail doux
+                { hueBase: 10, hueRange: 15, sat: [60, 80], bright: [85, 100] },
+                // Violet mystique
+                { hueBase: 280, hueRange: 25, sat: [65, 85], bright: [70, 90] }
+            ];
+            
+            // Sélectionner un schéma basé sur la note MIDI
+            const schemeIndex = floor(map(note, 0, 127, 0, colorSchemes.length));
+            const scheme = colorSchemes[constrain(schemeIndex, 0, colorSchemes.length - 1)];
+            
+            // Générer la couleur avec variation
+            const hue = (scheme.hueBase + random(-scheme.hueRange, scheme.hueRange) + 360) % 360;
+            const saturation = random(scheme.sat[0], scheme.sat[1]);
+            const brightness = random(scheme.bright[0], scheme.bright[1]);
+            
+            // Map velocity to size and energy
+            const energy = map(velocity, 0, 127, 0.6, 1.8);
+            
+            // Position avec un peu plus de variation
+            const x = random(width * 0.15, width * 0.85);
+            const y = random(height * 0.15, height * 0.85);
+            
+            // Créer l'instrument pour ce cœur
+            const instrument = createHeartInstrument(velocity, note);
+            
+            hearts.push(new Heart(x, y, hue, saturation, brightness, energy, instrument));
+        }
+
+        function clearHearts() {
+            // Libérer tous les sons avant de vider
+            hearts.forEach(h => {
+                if (h.instrument) {
+                    h.releaseSound();
+                }
+            });
+            hearts = [];
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // HEART CLASS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        class Heart {
+            constructor(x, y, hue, saturation, brightness, energy, instrument) {
+                this.x = x;
+                this.y = y;
+                this.hue = hue;
+                this.saturation = saturation;
+                this.brightness = brightness;
+                this.energy = energy;
+                this.age = 0;
+                this.maxAge = params.lifetime * 60; // Convert to frames
+                this.phase = random(TWO_PI);
+                this.noiseOffsetX = random(1000);
+                this.noiseOffsetY = random(1000);
+                
+                // Instrument audio unique pour ce cœur
+                this.instrument = instrument;
+                
+                // Précalculer les positions des particules pour optimisation
+                this.particlePositions = [];
+                this.initParticles();
+            }
+            
+            initParticles() {
+                this.particlePositions = [];
+                const numParticles = params.particleDensity;
+                
+                for (let i = 0; i < numParticles; i++) {
+                    const t = map(i, 0, numParticles, 0, TWO_PI);
+                    const offset = random(0.85, 1.15);
+                    
+                    // Précalculer la forme du cœur (équation paramétrique)
+                    const baseX = 16 * pow(sin(t), 3);
+                    const baseY = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t));
+                    
+                    this.particlePositions.push({
+                        x: baseX * offset,
+                        y: baseY * offset,
+                        brightness: random(0.7, 1.0)
+                    });
+                }
+            }
+            
+            update() {
+                this.age++;
+                
+                // Mouvement simplifié pour performances
+                if (params.movementSpeed > 0.1) {
+                    const noiseSpeed = params.movementSpeed * 0.005;
+                    this.x += (noise(this.noiseOffsetX + time * noiseSpeed) - 0.5) * params.movementSpeed * 0.5;
+                    this.y += (noise(this.noiseOffsetY + time * noiseSpeed) - 0.5) * params.movementSpeed * 0.5;
+                    
+                    this.x = constrain(this.x, 100, width - 100);
+                    this.y = constrain(this.y, 100, height - 100);
+                }
+                
+                // Moduler le son de l'instrument en fonction du pulse du cœur
+                if (this.instrument && audioInitialized && params.audioEnabled) {
+                    const pulse = sin(time * 2 + this.phase);
+                    
+                    // Moduler légèrement le volume avec le pulse
+                    const volumeMod = map(pulse, -1, 1, -3, 3);
+                    this.instrument.synth.volume.setValueAtTime(
+                        this.instrument.synth.volume.value + volumeMod * 0.1,
+                        Tone.now()
+                    );
+                    
+                    // Fade out progressif en fin de vie
+                    const lifeRatio = this.age / this.maxAge;
+                    if (lifeRatio > 0.7) {
+                        const fadeOutAmount = map(lifeRatio, 0.7, 1, 0, -20);
+                        this.instrument.synth.volume.setValueAtTime(
+                            this.instrument.synth.volume.value + fadeOutAmount * 0.05,
+                            Tone.now()
+                        );
+                    }
+                }
+            }
+            
+            display() {
+                push();
+                translate(this.x, this.y);
+                
+                // Calcul optimisé de l'alpha
+                const lifeRatio = this.age / this.maxAge;
+                let alpha;
+                if (lifeRatio < 0.15) {
+                    alpha = lifeRatio / 0.15;
+                } else if (lifeRatio > 0.8) {
+                    alpha = (1 - lifeRatio) / 0.2;
+                } else {
+                    alpha = 1;
+                }
+                
+                // Pulsation optimisée
+                const pulse = sin(time * 2 + this.phase) * 0.15 + 1;
+                const scale = params.heartSize * this.energy * pulse;
+                
+                colorMode(HSB);
+                
+                // Glow optimisé - moins de couches
+                if (params.glowIntensity > 3) {
+                    const glowSteps = constrain(floor(params.glowIntensity / 3), 1, 4);
+                    for (let g = glowSteps; g > 0; g--) {
+                        const glowSize = scale * (1 + g * 0.08);
+                        const glowAlpha = map(g, 0, glowSteps, 0, 20) * alpha;
+                        fill(this.hue, this.saturation * 0.4, this.brightness, glowAlpha);
+                        noStroke();
+                        this.drawHeartShapeFast(glowSize);
+                    }
+                }
+                
+                // Particules optimisées - rendu par batch
+                noFill();
+                strokeWeight(1.5);
+                
+                // Dessiner les particules par groupes pour optimisation
+                const step = max(1, floor(this.particlePositions.length / 100));
+                for (let i = 0; i < this.particlePositions.length; i += step) {
+                    const p = this.particlePositions[i];
+                    const x = p.x * scale;
+                    const y = p.y * scale;
+                    
+                    const particleAlpha = 180 * alpha * p.brightness;
+                    stroke(this.hue, this.saturation, this.brightness, particleAlpha);
+                    point(x, y);
+                }
+                
+                // Contour principal
+                noFill();
+                strokeWeight(2);
+                stroke(this.hue, this.saturation, this.brightness * 0.9, 220 * alpha);
+                this.drawHeartShapeFast(scale);
+                
+                pop();
+            }
+            
+            // Version optimisée du dessin de cœur
+            drawHeartShapeFast(scale) {
+                beginShape();
+                // Moins de points pour meilleures performances
+                for (let t = 0; t < TWO_PI; t += 0.15) {
+                    const x = scale * 16 * pow(sin(t), 3);
+                    const y = -scale * (13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t));
+                    vertex(x, y);
+                }
+                endShape(CLOSE);
+            }
+            
+            drawHeartShape(scale) {
+                this.drawHeartShapeFast(scale);
+            }
+            
+            releaseSound() {
+                if (this.instrument && audioInitialized) {
+                    // Fade out puis release
+                    this.instrument.synth.volume.rampTo(-60, 0.5);
+                    
+                    setTimeout(() => {
+                        if (this.instrument) {
+                            this.instrument.synth.triggerRelease();
+                            this.instrument.lfo.stop();
+                            
+                            // Disposer après un délai pour permettre le release
+                            setTimeout(() => {
+                                if (this.instrument) {
+                                    this.instrument.synth.dispose();
+                                    this.instrument.lfo.dispose();
+                                    if (this.instrument.vibrato) {
+                                        this.instrument.vibrato.dispose();
+                                    }
+                                    this.instrument = null;
+                                }
+                            }, 3000);
+                        }
+                    }, 500);
+                }
+            }
+            
+            isDead() {
+                return this.age >= this.maxAge;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // UI CONTROL HANDLERS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function updateParam(paramName, value) {
+            let numValue;
+            
+            // Handle checkbox values
+            if (typeof value === 'boolean') {
+                params[paramName] = value;
+                return;
+            }
+            
+            numValue = parseFloat(value);
+            params[paramName] = numValue;
+            document.getElementById(paramName + '-value').textContent = value;
+            
+            // Reinit particles if density changed
+            if (paramName === 'particleDensity') {
+                hearts.forEach(h => h.initParticles());
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SEED CONTROL FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function updateSeedDisplay() {
+            document.getElementById('seed-input').value = params.seed;
+        }
+
+        function updateSeed() {
+            let input = document.getElementById('seed-input');
+            let newSeed = parseInt(input.value);
+            if (newSeed && newSeed > 0) {
+                params.seed = newSeed;
+                randomSeed(params.seed);
+                noiseSeed(params.seed);
+            } else {
+                updateSeedDisplay();
+            }
+        }
+
+        function previousSeed() {
+            params.seed = Math.max(1, params.seed - 1);
+            updateSeedDisplay();
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+        }
+
+        function nextSeed() {
+            params.seed = params.seed + 1;
+            updateSeedDisplay();
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+        }
+
+        function randomSeedAndUpdate() {
+            params.seed = Math.floor(Math.random() * 999999) + 1;
+            updateSeedDisplay();
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+        }
+
+        function resetParameters() {
+            params = {...defaultParams};
+            
+            // Update UI elements - Visual
+            document.getElementById('heartSize').value = params.heartSize;
+            document.getElementById('heartSize-value').textContent = params.heartSize;
+            document.getElementById('pulseSpeed').value = params.pulseSpeed;
+            document.getElementById('pulseSpeed-value').textContent = params.pulseSpeed;
+            document.getElementById('particleDensity').value = params.particleDensity;
+            document.getElementById('particleDensity-value').textContent = params.particleDensity;
+            document.getElementById('lifetime').value = params.lifetime;
+            document.getElementById('lifetime-value').textContent = params.lifetime;
+            document.getElementById('movementSpeed').value = params.movementSpeed;
+            document.getElementById('movementSpeed-value').textContent = params.movementSpeed;
+            document.getElementById('glowIntensity').value = params.glowIntensity;
+            document.getElementById('glowIntensity-value').textContent = params.glowIntensity;
+            document.getElementById('maxHearts').value = params.maxHearts;
+            document.getElementById('maxHearts-value').textContent = params.maxHearts;
+            
+            // Update UI elements - Audio
+            document.getElementById('audioEnabled').checked = params.audioEnabled;
+            document.getElementById('masterVolume').value = params.masterVolume;
+            document.getElementById('masterVolume-value').textContent = params.masterVolume + ' dB';
+            document.getElementById('chordProgression').value = params.chordProgression;
+            
+            updateSeedDisplay();
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+            
+            // Update audio if initialized
+            if (audioInitialized) {
+                Tone.Destination.volume.value = params.masterVolume;
+            }
+            
+            // Reinit all hearts
+            hearts.forEach(h => h.initParticles());
+        }
+
+        // Initialize UI on load
+        window.addEventListener('load', function() {
+            updateSeedDisplay();
+        });
+    </script>
+</body>
+</html>
